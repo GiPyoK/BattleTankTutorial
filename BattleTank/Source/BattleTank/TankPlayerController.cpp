@@ -40,7 +40,7 @@ void ATankPlayerController::AimTowardsCrosshair()
 	FVector HitLocation; // OUT parameter
 	if (GetSightRayHitLocation(HitLocation))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HitLocation: %s"), *HitLocation.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("Look direction: %s"), *HitLocation.ToString());
 
 		// TODO Tell controlled tank to aim at this point
 	}
@@ -49,7 +49,54 @@ void ATankPlayerController::AimTowardsCrosshair()
 // Get world location of line trace through crosshair, true if this landscape
 bool ATankPlayerController::GetSightRayHitLocation(FVector& HitLocation) const
 {
-	HitLocation = FVector(1.0f);
+	// Find the crosshair posisiton
+	int32 ViewportSizeX, ViewportSizeY;
+	GetViewportSize(ViewportSizeX, ViewportSizeY);
+
+	FVector2D ScreenLocation = FVector2D(ViewportSizeX * CrossHairXLocation, ViewportSizeY * CrossHairYLocation);
+
+	// "De-project" the screen position of the crosshair to a world direction
+	FVector LookDirection;
+	FHitResult HitResult;
+	if (GetLookDirection(ScreenLocation, LookDirection))
+	{
+		if (GetLookVectorHitLocation(LookDirection, HitLocation))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Hit Location: %s"), *HitLocation.ToString());
+		}
+	}
+
+	// Linetrace along that direction, and see what we hit (up to max range)
+	
+
 	return true;
 }
 
+bool ATankPlayerController::GetLookDirection(FVector2D ScreenLocation, FVector& LookDirection) const
+{
+	FVector CameraWorldLocation; // To be discarded
+	return DeprojectScreenPositionToWorld(ScreenLocation.X, ScreenLocation.Y, CameraWorldLocation, LookDirection);
+}
+
+bool ATankPlayerController::GetLookVectorHitLocation(FVector LookDirection, FVector& HitLocation) const
+{
+	FHitResult HitResult;
+	FVector Start = PlayerCameraManager->GetCameraLocation();
+	FVector End = Start + (LookDirection * LineTraceRange);
+	if (GetWorld()->LineTraceSingleByChannel(
+			HitResult,
+			Start,
+			End,
+			ECollisionChannel::ECC_Visibility,
+			FCollisionQueryParams::DefaultQueryParam,
+			FCollisionResponseParams::DefaultResponseParam))
+	{
+		HitLocation = HitResult.Location;
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GetLookVectorHitLocation() FAILED"));
+		return false;
+	}
+}
