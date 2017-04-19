@@ -2,6 +2,7 @@
 
 #include "BattleTank.h"
 #include "TankBarrel.h"
+#include "TankTurret.h"
 #include "TankAimingComponent.h"
 
 
@@ -21,20 +22,25 @@ void UTankAimingComponent::SetBarrelReference(UTankBarrel* BarrelToSet)
 	Barrel = BarrelToSet;
 }
 
+void UTankAimingComponent::SetTurretReference(UTankTurret* TurretToSet)
+{
+	Turret = TurretToSet;
+}
+
 
 void UTankAimingComponent::AimAt(FVector HitLocation, float LaunchSpeed)
 {
-	if (!Barrel)
+	if (!Barrel || !Turret)
 	{
 		return;
 	}
 
 	FVector OutLaunchVelocity;
 	FVector StartLocation = Barrel->GetSocketLocation(FName("BarrelEndPoint"));
-	TArray<AActor*> ActorsToIgnore;
 
 	// Calculate the OutLaunchVelocity
-	if (UGameplayStatics::SuggestProjectileVelocity(
+	bool bHanveAimSolution = UGameplayStatics::SuggestProjectileVelocity
+	(
 		this,
 		OutLaunchVelocity,
 		StartLocation,
@@ -44,13 +50,13 @@ void UTankAimingComponent::AimAt(FVector HitLocation, float LaunchSpeed)
 		0,
 		0,
 		ESuggestProjVelocityTraceOption::DoNotTrace,
-		FCollisionResponseParams::DefaultResponseParam,
-		ActorsToIgnore,
-		false
-		))
+		FCollisionResponseParams::DefaultResponseParam
+	);
+
+	if (bHanveAimSolution)
 	{
 		auto AimDirection = OutLaunchVelocity.GetSafeNormal();
-		MoveBarrelTowards(AimDirection);
+		MoveTankAimTowards(AimDirection);
 
 		auto TankName = GetOwner()->GetName();
 		auto Time = GetWorld()->GetTimeSeconds();
@@ -60,18 +66,23 @@ void UTankAimingComponent::AimAt(FVector HitLocation, float LaunchSpeed)
 	{
 		auto TankName = GetOwner()->GetName();
 		auto Time = GetWorld()->GetTimeSeconds();
-		UE_LOG(LogTemp, Warning, TEXT("%f: %s Aim solve NOT found towards %s"), Time, *TankName, *OutLaunchVelocity.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Aim solve NOT found"), Time, *TankName, *OutLaunchVelocity.ToString());
 	}
 }
 
-void UTankAimingComponent::MoveBarrelTowards(FVector AimDirection)
+void UTankAimingComponent::MoveTankAimTowards(FVector AimDirection)
 {
 	// Work out difference between current barrel rotation, and AimDirection
 	auto BarrelRotation = Barrel->GetForwardVector().Rotation(); // roll, pitch, yaw
 	auto AimAsRotator = AimDirection.Rotation();
-	auto DeltaRotator = AimAsRotator - BarrelRotation;
+	auto DeltaBarrelRotator = AimAsRotator - BarrelRotation;
 
-	Barrel->Elevate(5); // TODO remove magic number
+	Barrel->Elevate(DeltaBarrelRotator.Pitch);
+
+	auto TurretRotation = Turret->GetForwardVector().Rotation();
+	auto DeltaTurretRotator = AimAsRotator - TurretRotation;
+
+	Turret->Rotate(DeltaTurretRotator.Yaw);
 }
 
 
