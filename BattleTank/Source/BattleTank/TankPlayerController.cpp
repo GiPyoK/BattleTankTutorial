@@ -2,6 +2,7 @@
 
 #include "BattleTank.h"
 #include "TankPlayerController.h"
+#include "Tank.h"
 
 void ATankPlayerController::BeginPlay()
 {
@@ -66,8 +67,6 @@ bool ATankPlayerController::GetSightRayHitLocation(FVector& HitLocation) const
 		}
 	}
 
-	// Linetrace along that direction, and see what we hit (up to max range)
-	
 
 	return true;
 }
@@ -96,7 +95,6 @@ bool ATankPlayerController::GetLookVectorHitLocation(FVector LookDirection, FVec
 	}
 	else
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("GetLookVectorHitLocation() FAILED"));
 		return false;
 	}
 }
