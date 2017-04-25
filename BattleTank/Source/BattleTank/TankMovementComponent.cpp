@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright GPK Ltd.
 
 #include "BattleTank.h"
 #include "TankTrack.h"
@@ -13,6 +13,19 @@ void UTankMovementComponent::Initialise(UTankTrack* LeftTrackToSet, UTankTrack* 
 	RightTrack = RightTrackToSet;
 }
 
+void UTankMovementComponent::RequestDirectMove(const FVector& MoveVelocity, bool bForceMaxSpeed)
+{
+	// No need to call Super() as we are replaceing the functionality
+
+	auto TankForward = GetOwner()->GetActorForwardVector().GetSafeNormal();
+	auto AIForwardIntention = MoveVelocity.GetSafeNormal();
+
+	auto ForwardThrow = FVector::DotProduct(TankForward, AIForwardIntention); // cosine graph
+	auto RightThrow = FVector::CrossProduct(TankForward, AIForwardIntention).Z;
+
+	IntendMoveForward(ForwardThrow);
+	IntendTurnRight(RightThrow);
+}
 
 void UTankMovementComponent::IntendMoveForward(float Throw)
 {
