@@ -7,6 +7,7 @@
 void ATankAIController::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Warning, TEXT("GPKGPK: ATankAIController::BeginPlay()"));
 }
 
 void ATankAIController::Tick(float DeltaTime)
@@ -16,16 +17,16 @@ void ATankAIController::Tick(float DeltaTime)
 	auto ControlledTank = Cast<ATank>(GetPawn());
 	auto PlayerTank = Cast<ATank>(GetWorld()->GetFirstPlayerController()->GetPawn());
 
-	if (ControlledTank && PlayerTank)
-	{
-		// Move towards the player
-		MoveToActor(PlayerTank, AcceptanceRadius); // TODO check radius is in cm
+	if (!ensure(ControlledTank && PlayerTank)) { return; }
 
-		// Aim towards the player
-		ControlledTank->AimAt(PlayerTank->GetActorLocation());
+	// Move towards the player
+	MoveToActor(PlayerTank, AcceptanceRadius); // TODO check radius is in cm
 
-		ControlledTank->Fire(); // TODO limit firing rate
-	}
+	// Aim towards the player
+	ControlledTank->AimAt(PlayerTank->GetActorLocation());
+
+	ControlledTank->Fire(); // TODO limit firing rate
+
 }
 
 

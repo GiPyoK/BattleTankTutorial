@@ -13,8 +13,14 @@ ATank::ATank()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
+	UE_LOG(LogTemp, Warning, TEXT("GPKGPK: ATank::Construction"));
 }
 
+void ATank::BeginPlay()
+{
+	Super::BeginPlay();
+	UE_LOG(LogTemp, Warning, TEXT("GPKGPK: ATank::BeginPlay()"));
+}
 
 // Called to bind functionality to input
 void ATank::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -25,20 +31,27 @@ void ATank::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void ATank::AimAt(FVector HitLocation)
 {
+	if (!ensure(TankAimingComponent)) { return; }
+
 	TankAimingComponent->AimAt(HitLocation, LaunchSpeed);
 }
 
 void ATank::Fire()
 {
+	if (!ensure(Barrel)) { return; }
+
 	bool isReloaded = (FPlatformTime::Seconds() - LastFireTime) > ReloadTimeInSeconds;
-	if (Barrel && isReloaded)
+
+	if (isReloaded)
 	{
 		// Spawn projectile
-		auto Projectile = GetWorld()->SpawnActor<AProjectile>(
-			ProjectileBlueprint,
-			Barrel->GetSocketLocation(FName("BarrelEndPoint")),
-			Barrel->GetSocketRotation(FName("BarrelEndPoint"))
-		);
+		auto Projectile = 
+			GetWorld()->SpawnActor<AProjectile>
+			(
+				ProjectileBlueprint,
+				Barrel->GetSocketLocation(FName("BarrelEndPoint")),
+				Barrel->GetSocketRotation(FName("BarrelEndPoint"))
+			);
 
 		Projectile->LaunchProjectile(LaunchSpeed);
 		LastFireTime = FPlatformTime::Seconds();

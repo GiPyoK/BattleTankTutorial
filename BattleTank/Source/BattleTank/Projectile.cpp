@@ -11,6 +11,7 @@ AProjectile::AProjectile()
 	PrimaryActorTick.bCanEverTick = true;
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(FName("Projectile Movement"));
+	if (!ensure(ProjectileMovement)) { return; }
 	ProjectileMovement->bAutoActivate = false;
 
 }
@@ -19,7 +20,7 @@ AProjectile::AProjectile()
 void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	UE_LOG(LogTemp, Warning, TEXT("GPKGPK: AProjectile::BeginPlay()"));
 }
 
 // Called every frame
@@ -31,6 +32,7 @@ void AProjectile::Tick(float DeltaTime)
 
 void AProjectile::LaunchProjectile(float Speed)
 {
+	if (!ensure(ProjectileMovement)) { return; }
 	ProjectileMovement->SetVelocityInLocalSpace(FVector::ForwardVector * Speed);
 	ProjectileMovement->Activate();
 }
